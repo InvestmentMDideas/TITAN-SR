@@ -1,0 +1,4 @@
+{
+  "note": "Deployable score thresholds are ensemble- and dataset-specific. These were derived on the internal validation split for the three-checkpoint ensemble; re-derive with src/analyses/lock_threshold.py for your data.",
+  "three_checkpoint_validation_locked": {"target_recall_0.995": 0.046, "target_recall_0.99": 0.089, "target_recall_0.95": 0.620}
+}

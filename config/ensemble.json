@@ -1,0 +1,18 @@
+{
+  "name": "TITAN-SR three-checkpoint weighted ensemble (manuscript Tables 2-3)",
+  "strategy": "weighted_mean_sigmoid",
+  "max_length": 512,
+  "input_format": "[CLS] eligibility_criteria [SEP] \"title. abstract\" [SEP]",
+  "members": [
+    {"name": "pubmedbert_stratified", "base": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext", "weight": 0.50},
+    {"name": "biolinkbert_stratified", "base": "michiyasunaga/BioLinkBERT-base", "weight": 0.25},
+    {"name": "pubmedbert_allsource",  "base": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext", "weight": 0.25}
+  ],
+  "sensitivity_two_model_50_50": {
+    "note": "Statistically equivalent simpler ensemble (paired per-review S@99R difference -0.002, 95% CI -0.041 to +0.009).",
+    "members": [
+      {"name": "pubmedbert_stratified", "base": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext", "weight": 0.50},
+      {"name": "biolinkbert_stratified", "base": "michiyasunaga/BioLinkBERT-base", "weight": 0.50}
+    ]
+  }
+}

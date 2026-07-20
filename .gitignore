@@ -1,0 +1,19 @@
+# weights / checkpoints (never commit)
+*.safetensors
+*.bin
+*.pt
+*.ckpt
+checkpoints/
+models/
+# large data / outputs
+*.csv
+!data/example_dataset.csv
+*.parquet
+# real data manifests / splits (distributed via OSF, not GitHub)
+data/manifests/
+data/splits/
+scores.json
+metrics.json
+__pycache__/
+*.pyc
+.env

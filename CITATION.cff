@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+title: "TITAN-SR: a biomedical BERT ensemble for systematic-review title and abstract screening"
+message: "If you use this software, please cite the associated article."
+authors:
+  - family-names: Pitre
+    given-names: Tyler
+preferred-citation:
+  type: article
+  title: "TITAN-SR: development and validation of a biomedical BERT ensemble for systematic-review title and abstract screening"
+  journal: "Journal of Clinical Epidemiology"
+  year: 2026
+license: MIT

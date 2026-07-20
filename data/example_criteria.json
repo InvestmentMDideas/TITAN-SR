@@ -1,0 +1,9 @@
+{
+  "review_id": "EXAMPLE_2025",
+  "population": "Adults with knee osteoarthritis",
+  "intervention": "Mesenchymal stem-cell (MSC) therapy",
+  "comparator": "Usual care or placebo",
+  "outcomes": ["VAS pain", "WOMAC", "adverse events"],
+  "study_design": "Randomized controlled trials",
+  "exclusions": ["animal studies", "in-vitro studies", "review articles"]
+}
