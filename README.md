@@ -1,84 +1,158 @@
 # TITAN-SR — reproducibility package
 
-Code and configuration to reproduce **TITAN-SR**, a biomedical BERT ensemble for systematic-review
-**title and abstract** screening (manuscript JCEPI-D-26-00715, *Journal of Clinical Epidemiology*).
+Code and configuration for TITAN-SR, a biomedical BERT ensemble for systematic-review title and abstract screening (manuscript JCEPI-D-26-00715, *Journal of Clinical Epidemiology*).
 
-> **This repository deliberately does *not* include the trained model weights.** It provides everything
-> needed to (a) understand and re-run the method, (b) re-train from the released data manifests, and
-> (c) reproduce the paper's evaluation and sensitivity analyses. The fine-tuned weights are available
-> from the corresponding author on reasonable request for research use, and will be deposited (with SHA-256
-> integrity hashes) on OSF at publication. See `WEIGHTS.md`.
+## Reproducibility status
 
-## What TITAN-SR does
-For each citation, the model reads the review's **eligibility criteria** together with the citation's
-**title + abstract** (`[CLS] criteria [SEP] title. abstract [SEP]`, truncated to 512 tokens) and outputs a
-single inclusion-relevance score. Scores rank citations for screening; a stopping-rule engine flags
-high-priority, borderline, and stopping-eligible records. The reported results use a **weighted
-three-checkpoint ensemble** (`config/ensemble.json`).
+This archive contains the PMC and Track B label manifests, criteria, a review-level split, metric and analysis code, and reference hashes for the three locally audited checkpoints. It does **not** currently contain:
+
+- model weights or a confirmed public weight-deposit URL;
+- a normalized Chan citation/criteria manifest matching the all-source training schema (the verified source locator and checksums are included);
+- PubMed abstracts, which must be reconstructed from PMIDs;
+- abstracts/PMIDs for the title-only temporal-holdout manifest; or
+- a complete environment lock or container.
+
+The two-model PMC + Track B workflow below is runnable after fetching PubMed records. Exact reproduction of the manuscript's three-checkpoint experiment remains blocked until the documented Chan source is normalized into the released training schema, the reference weights are deposited, and the base-model revisions are documented. See [data/README.md](data/README.md) and [WEIGHTS.md](WEIGHTS.md).
+
+## Method
+
+For each citation, the model reads the review's eligibility criteria together with the citation's title and abstract (`[CLS] criteria [SEP] title. abstract [SEP]`, truncated to 512 tokens) and emits an inclusion-relevance score. The primary manuscript configuration is a weighted three-checkpoint ensemble. A selectable two-model 50/50 sensitivity configuration is included for the reproducible PMC + Track B scaffold.
 
 ## Repository layout
-```
+
+```text
 src/
-  train.py            fine-tune one biomedical BERT checkpoint (the TITAN-SR recipe)
-  inference.py        score citations with the weighted-ensemble (loads local checkpoints)
-  evaluate.py         metrics: AUC, specificity@95/99% recall, WSS@95, review-level bootstrap CIs
-  fetch_abstracts.py  rebuild training/eval CSVs from the manifests (PubMed E-utilities)
-  llm_benchmark.py    stateless commercial-chatbot screening benchmark (API keys via env vars)
+  fetch_abstracts.py    resumable PubMed reconstruction with cache + audit
+  materialize_splits.py build leakage-clean train/val/test CSVs
+  train.py              fine-tune one biomedical BERT checkpoint
+  inference.py          score citations with a selected local ensemble
+  evaluate.py           review metrics and review-level bootstrap CIs
+  llm_benchmark.py      stateless commercial-chatbot benchmark scaffold
   analyses/
-    leakage.py        citation-level overlap + within-review positive control
-    lock_threshold.py lock a deployable threshold on validation, evaluate recall on a holdout
+    leakage.py          title overlap + within-review positive control
+    lock_threshold.py   lock a validation threshold, evaluate a holdout
 config/
-  ensemble.json       3-checkpoint ensemble (members, weights, input format); + 2-model sensitivity
-  thresholds.json     example deployable thresholds (validation-derived; ensemble/data-specific)
+  ensemble.json         primary ensemble + selectable two-model variant
+  thresholds.json       example validation-derived thresholds
 data/
-  README.md           data-manifest schema + how to obtain the manifests
-  example_criteria.json
-  example_dataset.csv (tiny synthetic sample showing the column schema)
-requirements.txt  environment.yml  LICENSE  DATA_LICENSE.md  WEIGHTS.md  CITATION.cff
+  manifests/            released label and criteria manifests
+  splits/               released review-level split assignment
+tests/                   metric and data-workflow regression tests
 ```
 
-## Quick start
+## Corrected quick start: PMC + Track B two-model scaffold
+
+Python 3.12 is the documented environment. NCBI asks API users to identify themselves; set an email and, optionally, an API key before a large reconstruction.
+
 ```bash
-pip install -r requirements.txt           # or: conda env create -f environment.yml
+conda env create -f environment.yml
+conda activate titan-sr
+export NCBI_EMAIL='your-email@example.org'
+# export NCBI_API_KEY='...'  # optional; raises the permitted request rate
 
-# 0) Rebuild a training CSV from the manifests (download them first — see "Data"; fetches abstracts from PubMed)
-python src/fetch_abstracts.py --labels data/manifests/pmc_train_labels.csv.gz --criteria data/manifests/criteria.csv.gz --out data/pmc_train.csv
+python src/fetch_abstracts.py \
+  --labels data/manifests/pmc_train_labels.csv.gz \
+  --criteria data/manifests/criteria.csv.gz \
+  --out data/reconstructed/pmc.csv \
+  --cache data/cache/pubmed.sqlite3 \
+  --audit data/reconstructed/pmc.audit.json
 
-# 1) Re-train a checkpoint from a manifest CSV (criteria,title,abstract,label,review_id)
-python src/train.py --base microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext \
-                    --train data/train.csv --val data/val.csv --out checkpoints/pubmedbert
+python src/fetch_abstracts.py \
+  --labels data/manifests/trackb_train_labels.csv.gz \
+  --criteria data/manifests/criteria.csv.gz \
+  --out data/reconstructed/trackb.csv \
+  --cache data/cache/pubmed.sqlite3 \
+  --audit data/reconstructed/trackb.audit.json
 
-# 2) Score an evaluation set with the weighted ensemble
-python src/inference.py --config config/ensemble.json --models checkpoints \
-                        --input data/test.csv --out scores.json
+python src/materialize_splits.py \
+  --input data/reconstructed/pmc.csv \
+  --input data/reconstructed/trackb.csv \
+  --splits data/splits/stratified_split_v2.json \
+  --out-dir data/materialized
 
-# 3) Compute metrics (per-review medians + bootstrap CIs)
+python src/train.py \
+  --base microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext \
+  --train data/materialized/train.csv \
+  --val data/materialized/val.csv \
+  --out checkpoints/pubmedbert_stratified
+
+python src/train.py \
+  --base michiyasunaga/BioLinkBERT-base \
+  --train data/materialized/train.csv \
+  --val data/materialized/val.csv \
+  --out checkpoints/biolinkbert_stratified
+
+python src/inference.py \
+  --config config/ensemble.json \
+  --variant sensitivity_two_model_50_50 \
+  --models checkpoints \
+  --input data/materialized/test.csv \
+  --out scores.json
+
 python src/evaluate.py --scores scores.json --out metrics.json
 ```
 
-## Data
-Training/evaluation **manifests are distributed separately** from this repository (PMID identifiers +
-screening labels, per-review eligibility criteria, and the review-level split): they will be deposited on OSF
-at publication and are available from the corresponding author in the interim — see `data/README.md`. Place
-them under `data/manifests/` and `data/splits/`. Abstracts are reconstructed from the identifiers with
-`src/fetch_abstracts.py` (PubMed). No model weights and no API keys are included. The Chan gold-standard and
-Chan-2025 external sets are obtained from their original public releases (refs 13, 14).
+`fetch_abstracts.py` resumes from its transactional SQLite cache. It writes an audit for exclusions and fails without producing a partial CSV when a network batch fails; use `--allow-partial` only for an explicitly incomplete exploratory run. Records successfully returned by PubMed but lacking abstracts are audited and excluded by default.
 
-## Reproducing the paper's analyses
-- External validation (Tables 2–3): `src/inference.py` + `src/evaluate.py` with `config/ensemble.json`.
-- Ensemble-choice sensitivity (3-checkpoint vs 2-model 50/50): add `--block sensitivity_two_model_50_50`
-  to the `src/inference.py` call (selects the alternative member block in `config/ensemble.json`).
-- Encoder ablation (R2-c5/c21): re-run `src/train.py` with `--base dmis-lab/biobert-base-cased-v1.1` (etc.).
-- Citation-level leakage + positive control (R3-maj1): `src/analyses/leakage.py`. Run inference with
-  `--emit_titles`; `--train_titles` takes a JSON list of titles extracted from the rebuilt training CSV.
-- Registered primary outcome (recall at a validation-locked threshold): `src/analyses/lock_threshold.py`.
+`materialize_splits.py` resolves the source prefixes omitted from the label manifests, removes duplicate review/citation rows, excludes conflicting within-review labels by default, and prevents one PMID from crossing split boundaries. Test is retained over validation, and validation over training. Its audit verifies the split metadata against the assignments; the incorrect original header counts in the included split have been recomputed from those assignments.
 
-## Determinism
-Inference is deterministic (eval mode, no shuffling). Training is **not** fully deterministic (class-balanced
-sampler + mixed precision); released weights carry SHA-256 hashes so a deposited checkpoint can be verified.
+The commands above retrain nondeterministic checkpoints on the two released sources; they do not recreate the manuscript weights or its missing Chan component.
 
-## License
-Code: MIT (`LICENSE`). Data manifests: CC-BY 4.0 (`DATA_LICENSE.md`).
+## Reference-weight inference
 
-## Citation
-See `CITATION.cff`.
+If the three reference checkpoints have been obtained, place them under the names below:
+
+```text
+checkpoints/
+  pubmedbert_stratified/
+  biolinkbert_stratified/
+  pubmedbert_allsource/
+```
+
+Then use the primary configuration. `--verify-reference-hashes` checks the single `model.safetensors` in each directory against `config/ensemble.json` before loading it.
+
+```bash
+python src/inference.py \
+  --config config/ensemble.json \
+  --variant primary \
+  --models checkpoints \
+  --verify-reference-hashes \
+  --input data/materialized/test.csv \
+  --out scores.json
+```
+
+Do not use reference-hash verification with newly retrained weights; stochastic retraining will produce different hashes.
+
+## Metric semantics
+
+Fixed-recall metrics include every record tied at the cutoff score, making results conservative and independent of row order. The evaluator reports both:
+
+- `work_saved_at_95_recall`: the raw fraction left unscreened; and
+- `wss_at_95_recall`: Cohen's work saved over random sampling, `work_saved - 0.05`.
+
+Inference output includes titles and can be passed to `src/analyses/leakage.py`. Equal prediction scores receive equal average percentiles in that analysis.
+
+Historical multi-variant score JSONs can be replayed explicitly with
+`--score-key 2model` or `--score-key 3model`; newly generated inference output
+uses the default `score` field.
+
+## Threshold locking
+
+```bash
+python src/analyses/lock_threshold.py \
+  --val_scores validation_scores.json \
+  --holdout_scores holdout_scores.json \
+  --target_recall 0.99
+```
+
+The threshold is selected from validation positives and uses an inclusive `>=` comparator. All cutoff ties are retained, and the command prints the achieved validation recall rather than assuming it equals the requested target.
+
+## Tests
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+## License and citation
+
+Code is MIT licensed. Data-manifest terms are described in `DATA_LICENSE.md`; third-party source terms still apply. See `CITATION.cff` for citation metadata.

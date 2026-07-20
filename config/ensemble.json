@@ -4,15 +4,40 @@
   "max_length": 512,
   "input_format": "[CLS] eligibility_criteria [SEP] \"title. abstract\" [SEP]",
   "members": [
-    {"name": "pubmedbert_stratified", "base": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext", "weight": 0.50},
-    {"name": "biolinkbert_stratified", "base": "michiyasunaga/BioLinkBERT-base", "weight": 0.25},
-    {"name": "pubmedbert_allsource",  "base": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext", "weight": 0.25}
+    {
+      "name": "pubmedbert_stratified",
+      "base": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext",
+      "weight": 0.50,
+      "reference_sha256": "755711147f1779dfbeb6a7f96dce9a26378e19a15b702e689522b4938287f783"
+    },
+    {
+      "name": "biolinkbert_stratified",
+      "base": "michiyasunaga/BioLinkBERT-base",
+      "weight": 0.25,
+      "reference_sha256": "30cb90ebb3a96cb8fdd51f5dc106d41f19c69410d06ed70b5768b59ff34afc42"
+    },
+    {
+      "name": "pubmedbert_allsource",
+      "base": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext",
+      "weight": 0.25,
+      "reference_sha256": "b69eb00096a33c6d02f2d25631caf96aafa8155546a4e679d101d23782cc32c6"
+    }
   ],
   "sensitivity_two_model_50_50": {
     "note": "Statistically equivalent simpler ensemble (paired per-review S@99R difference -0.002, 95% CI -0.041 to +0.009).",
     "members": [
-      {"name": "pubmedbert_stratified", "base": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext", "weight": 0.50},
-      {"name": "biolinkbert_stratified", "base": "michiyasunaga/BioLinkBERT-base", "weight": 0.50}
+      {
+        "name": "pubmedbert_stratified",
+        "base": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext",
+        "weight": 0.50,
+        "reference_sha256": "755711147f1779dfbeb6a7f96dce9a26378e19a15b702e689522b4938287f783"
+      },
+      {
+        "name": "biolinkbert_stratified",
+        "base": "michiyasunaga/BioLinkBERT-base",
+        "weight": 0.50,
+        "reference_sha256": "30cb90ebb3a96cb8fdd51f5dc106d41f19c69410d06ed70b5768b59ff34afc42"
+      }
     ]
   }
 }

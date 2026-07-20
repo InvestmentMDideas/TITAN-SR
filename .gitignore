@@ -9,9 +9,13 @@ models/
 *.csv
 !data/example_dataset.csv
 *.parquet
-# real data manifests / splits (distributed via OSF, not GitHub)
-data/manifests/
-data/splits/
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*.audit.json
+data/cache/
+data/reconstructed/
+data/materialized/
 scores.json
 metrics.json
 __pycache__/

@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "dataset": {
+    "title": "Title and Abstract Screening Data for Systematic Review",
+    "authors": ["Gary Chan", "Estrid He", "Janni Leung", "Karin Verspoor"],
+    "repository": "Mendeley Data",
+    "version": 1,
+    "doi": "10.17632/7sgmg89zb6.1",
+    "landing_page": "https://data.mendeley.com/datasets/7sgmg89zb6/1",
+    "publisher_api": "https://data.mendeley.com/public-api/datasets/7sgmg89zb6/files?folder_id=root&version=1",
+    "published_at": "2024-08-27T22:54:32.489Z",
+    "license": {
+      "name": "Creative Commons Attribution 4.0 International",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "associated_article_doi": "10.1017/rsm.2025.1"
+  },
+  "main_archive": {
+    "filename": "20240827_Systematic_Review_Data.zip",
+    "size_bytes": 466689365,
+    "sha256": "1eed13c9a18cbefd36a5ea4ad2d761f4c77a99980a09e007e02a88c7bc09e14d",
+    "download_url": "https://data.mendeley.com/public-files/datasets/7sgmg89zb6/files/01afaec8-0fe2-4d51-ad65-2a1c8d73fb4d/file_downloaded",
+    "members": [
+      {
+        "filename": "20240827_dev_set.csv",
+        "size_bytes": 1314528575,
+        "sha256": "502aaefd44bae2e6e7cf3f0d113b4e5dcd97d9be01448f7a03fefcafde9837ec"
+      },
+      {
+        "filename": "20240827_heart_test_set.csv",
+        "size_bytes": 56174753,
+        "sha256": "754ebfd720007cbfadbd076f0f10a7faa0d28baa7ef9d6e93ff9bf457e991669"
+      },
+      {
+        "filename": "20240827_HIV_test_set.csv",
+        "size_bytes": 12693017,
+        "sha256": "0d25dfe0649e8939ef83897188966f3e477be835d27c5f1b980863ef99a6298a"
+      },
+      {
+        "filename": "20240827_random_test_set.csv",
+        "size_bytes": 74566376,
+        "sha256": "44b85385342ede2a56779514b97519b36e3dbc7eecee37db4ff50def34dfa40c"
+      },
+      {
+        "filename": "20240827_val_set.csv",
+        "size_bytes": 74805971,
+        "sha256": "f5b29819b315d79ae47d83ee5a3a84ecbf254f63d337588f99da6c54d4479b1b"
+      }
+    ]
+  },
+  "verification": {
+    "retrieved_on": "2026-07-11",
+    "publisher_sha256_match": true,
+    "zip_integrity_test": "ok",
+    "note": "Source locator and integrity metadata only; the archive is not bundled here."
+  },
+  "label_interpretation": {
+    "1": "final inclusion",
+    "0.5": "full-text exclusion",
+    "0": "estimated title/abstract exclusion",
+    "caveat": "The associated paper describes these as approximations of screening outcomes, not independently adjudicated title/abstract labels."
+  }
+}
