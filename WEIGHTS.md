@@ -39,3 +39,7 @@ python src/inference.py \
 The reference ensemble weights are 0.50, 0.25, and 0.25 respectively. The two-model sensitivity variant uses the first two members at 0.50/0.50 and is selected with `--variant sensitivity_two_model_50_50`.
 
 Newly retrained checkpoints are not expected to match these hashes because the documented training recipe is stochastic. The exact base-model repository revisions used for the audited checkpoints have not yet been established and remain a reproducibility blocker.
+
+## Licences
+
+The checkpoints are fine-tuned from PubMedBERT (`microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext`, MIT) and BioLinkBERT-base (`michiyasunaga/BioLinkBERT-base`, Apache 2.0). A weight deposit must ship both licence texts, as listed in `NOTICE.md`.

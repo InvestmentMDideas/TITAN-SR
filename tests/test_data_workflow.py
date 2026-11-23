@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import json
 import subprocess
 import sys
@@ -116,6 +117,106 @@ class FetchAbstractTests(unittest.TestCase):
                 fetch_abstracts.main()
             self.assertFalse(output.exists())
             self.assertEqual(len(json.loads(audit.read_text())["failed_batches"]), 1)
+
+
+class CriteriaHandlingTests(unittest.TestCase):
+    def run_fetch(self, directory, criteria_files, extra=()):
+        labels = directory / "labels.csv"
+        output = directory / "out.csv"
+        cache = directory / "cache.sqlite3"
+        audit = directory / "audit.json"
+        write_csv(
+            labels,
+            ["review_id", "candidate_pmid", "label", "source"],
+            [
+                {"review_id": "open", "candidate_pmid": "123", "label": "1", "source": "pmc"},
+                {"review_id": "withheld", "candidate_pmid": "124", "label": "0", "source": "trackb"},
+            ],
+        )
+        fetch_abstracts.save_cache(
+            cache,
+            {
+                "123": {"title": "T1", "abstract": "A1", "status": "ok"},
+                "124": {"title": "T2", "abstract": "A2", "status": "ok"},
+            },
+        )
+        command = [
+            sys.executable,
+            str(ROOT / "src" / "fetch_abstracts.py"),
+            "--labels",
+            str(labels),
+            "--out",
+            str(output),
+            "--cache",
+            str(cache),
+            "--audit",
+            str(audit),
+        ]
+        for path in criteria_files:
+            command += ["--criteria", str(path)]
+        result = subprocess.run(command + list(extra), capture_output=True, text=True)
+        rows = []
+        if output.exists():
+            with output.open(encoding="utf-8") as handle:
+                rows = list(csv.DictReader(handle))
+        report = json.loads(audit.read_text()) if audit.exists() else {}
+        return result, rows, report
+
+    def test_rows_without_criteria_are_excluded_by_default(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            criteria = directory / "criteria.csv"
+            write_csv(criteria, ["review_id", "eligibility_criteria"], [{"review_id": "open", "eligibility_criteria": "RCT"}])
+            hashes = directory / "hashes.csv"
+            write_csv(hashes, ["review_id", "source", "text_sha256"], [])
+            result, rows, report = self.run_fetch(directory, [criteria], ["--criteria-hashes", str(hashes)])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual([row["review_id"] for row in rows], ["open"])
+            self.assertEqual(report["excluded_rows_by_reason"]["missing_criteria"], 1)
+            self.assertEqual(report["reviews_missing_criteria"], 1)
+
+    def test_missing_criteria_error_policy_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            criteria = directory / "criteria.csv"
+            write_csv(criteria, ["review_id", "eligibility_criteria"], [{"review_id": "open", "eligibility_criteria": "RCT"}])
+            result, _, report = self.run_fetch(directory, [criteria], ["--missing-criteria", "error"])
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse((directory / "out.csv").exists())
+            self.assertFalse(report["output_committed"])
+
+    def test_user_supplied_withheld_criteria_are_hash_checked(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            released = directory / "criteria.csv"
+            own = directory / "own.csv"
+            hashes = directory / "hashes.csv"
+            write_csv(released, ["review_id", "eligibility_criteria"], [{"review_id": "open", "eligibility_criteria": "RCT"}])
+            write_csv(own, ["review_id", "eligibility_criteria"], [{"review_id": "withheld", "eligibility_criteria": "Cohorts"}])
+            write_csv(
+                hashes,
+                ["review_id", "source", "text_sha256"],
+                [{"review_id": "withheld", "source": "trackb", "text_sha256": hashlib.sha256(b"Cohorts").hexdigest()}],
+            )
+            result, rows, report = self.run_fetch(directory, [released, own], ["--criteria-hashes", str(hashes)])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(sorted(row["review_id"] for row in rows), ["open", "withheld"])
+            self.assertEqual(report["withheld_criteria_check"]["withheld_reviews_hash_match"], 1)
+
+            write_csv(own, ["review_id", "eligibility_criteria"], [{"review_id": "withheld", "eligibility_criteria": "Other"}])
+            result, _, report = self.run_fetch(directory, [released, own], ["--criteria-hashes", str(hashes)])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(report["withheld_criteria_check"]["withheld_reviews_hash_mismatch"], 1)
+
+    def test_conflicting_criteria_files_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            first = directory / "a.csv"
+            second = directory / "b.csv"
+            write_csv(first, ["review_id", "criteria"], [{"review_id": "open", "criteria": "RCT"}])
+            write_csv(second, ["review_id", "criteria"], [{"review_id": "open", "criteria": "Cohort"}])
+            with self.assertRaises(ValueError):
+                fetch_abstracts.merge_criteria([first, second])
 
 
 class MaterializeSplitTests(unittest.TestCase):

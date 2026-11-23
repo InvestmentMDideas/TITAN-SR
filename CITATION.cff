@@ -10,3 +10,21 @@ preferred-citation:
   journal: "Journal of Clinical Epidemiology"
   year: 2026
 license: MIT
+references:
+  - type: dataset
+    title: "Title and Abstract Screening Data for Systematic Review"
+    authors:
+      - family-names: Chan
+        given-names: Gary
+      - family-names: He
+        given-names: Estrid
+      - family-names: Leung
+        given-names: Janni
+      - family-names: Verspoor
+        given-names: Karin
+    publisher:
+      name: Mendeley Data
+    version: "1"
+    year: 2024
+    doi: 10.17632/7sgmg89zb6.1
+    license: CC-BY-4.0

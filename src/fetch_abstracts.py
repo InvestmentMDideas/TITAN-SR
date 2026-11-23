@@ -4,11 +4,18 @@ The input label manifest is never modified. Successful batches are committed
 to the cache immediately, so an interrupted run can resume without re-fetching
 them. Network failures are distinct from PubMed records that genuinely have no
 abstract; network failures fail closed unless ``--allow-partial`` is supplied.
+
+Rows whose review has no eligibility-criteria text are excluded by default
+(``--missing-criteria``). Criteria text for reviews listed in
+``data/manifests/criteria_withheld.csv.gz`` is not distributed; if you supply
+it yourself (extra ``--criteria`` files), each passage is checked against the
+recorded SHA-256 and the result is written to the audit.
 """
 
 import argparse
 import csv
 import gzip
+import hashlib
 import json
 import os
 import sqlite3
@@ -18,9 +25,12 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from collections import Counter
 from datetime import datetime, timezone
+from pathlib import Path
 
 csv.field_size_limit(10**9)
 CACHE_SCHEMA_VERSION = 1
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CRITERIA_HASHES = ROOT / "data" / "manifests" / "criteria_withheld.csv.gz"
 
 
 def open_text(path):
@@ -191,10 +201,62 @@ def criteria_by_review(path):
     return {row["review_id"]: row.get(criteria_column) or "" for row in rows}
 
 
+def merge_criteria(paths):
+    """Merge one or more criteria manifests; the same review must not carry two different texts."""
+
+    merged = {}
+    for path in paths:
+        for review_id, text in criteria_by_review(path).items():
+            if not text:
+                continue
+            if review_id in merged and merged[review_id] != text:
+                raise ValueError(f"review {review_id!r} has different criteria text in two --criteria files")
+            merged[review_id] = text
+    return merged
+
+
+def withheld_criteria_hashes(path):
+    if not path or not os.path.exists(path):
+        return {}
+    _, rows = read_rows(path)
+    return {row["review_id"]: row["text_sha256"] for row in rows if row.get("text_sha256")}
+
+
+def check_withheld_criteria(criteria, hashes):
+    supplied = sorted(set(criteria) & set(hashes))
+    mismatched = [
+        review_id
+        for review_id in supplied
+        if hashlib.sha256(criteria[review_id].encode("utf-8")).hexdigest() != hashes[review_id]
+    ]
+    return {
+        "withheld_reviews_supplied": len(supplied),
+        "withheld_reviews_hash_match": len(supplied) - len(mismatched),
+        "withheld_reviews_hash_mismatch": len(mismatched),
+        "withheld_reviews_hash_mismatch_examples": mismatched[:20],
+    }
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--labels", required=True)
-    parser.add_argument("--criteria", required=True)
+    parser.add_argument(
+        "--criteria",
+        required=True,
+        action="append",
+        help="criteria manifest; repeat to add criteria you obtained yourself for withheld reviews",
+    )
+    parser.add_argument(
+        "--missing-criteria",
+        choices=("exclude", "keep", "error"),
+        default="exclude",
+        help="rows whose review has no criteria text: exclude (default), keep with empty criteria, or fail",
+    )
+    parser.add_argument(
+        "--criteria-hashes",
+        default=str(DEFAULT_CRITERIA_HASHES),
+        help="withheld-criteria hash manifest used to verify criteria you supply yourself",
+    )
     parser.add_argument("--out", required=True)
     parser.add_argument(
         "--cache",
@@ -233,7 +295,14 @@ def main():
     required = {"review_id", "candidate_pmid", "label"}
     if missing := required.difference(fields):
         parser.error(f"labels manifest is missing columns: {sorted(missing)}")
-    criteria = criteria_by_review(args.criteria)
+    criteria = merge_criteria(args.criteria)
+    withheld_check = check_withheld_criteria(criteria, withheld_criteria_hashes(args.criteria_hashes))
+    if withheld_check["withheld_reviews_hash_mismatch"]:
+        print(
+            f"warning: {withheld_check['withheld_reviews_hash_mismatch']} supplied criteria passages differ "
+            "from the recorded text (see audit)",
+            flush=True,
+        )
     cache_connection = connect_cache(cache_path)
 
     pmids = sorted(
@@ -241,6 +310,7 @@ def main():
             (row.get("candidate_pmid") or "").strip()
             for row in label_rows
             if (row.get("candidate_pmid") or "").strip().isdigit()
+            and (args.missing_criteria == "keep" or row["review_id"] in criteria)
         },
         key=int,
     )
@@ -315,6 +385,15 @@ def main():
         writer = csv.DictWriter(output_handle, fieldnames=output_fields)
         writer.writeheader()
         for row in label_rows:
+            review_id = row["review_id"]
+            if review_id not in criteria:
+                missing_criteria_reviews.add(review_id)
+                if args.missing_criteria == "exclude":
+                    excluded["missing_criteria"] += 1
+                    continue
+                if args.missing_criteria == "error":
+                    excluded["missing_criteria_error"] += 1
+                    continue
             pmid = (row.get("candidate_pmid") or "").strip()
             if not pmid.isdigit():
                 excluded["invalid_or_missing_pmid"] += 1
@@ -336,9 +415,6 @@ def main():
             label = (row.get("label") or "").strip()
             if label not in ("0", "1", "0.0", "1.0"):
                 raise ValueError(f"invalid binary label {label!r} for PMID {pmid}")
-            review_id = row["review_id"]
-            if review_id not in criteria:
-                missing_criteria_reviews.add(review_id)
             writer.writerow(
                 {
                     "review_id": review_id,
@@ -356,6 +432,10 @@ def main():
     fatal_reasons = []
     if failed_batches and not args.allow_partial:
         fatal_reasons.append(f"{len(failed_batches)} PubMed batch(es) failed")
+    if excluded["missing_criteria_error"]:
+        fatal_reasons.append(
+            f"{excluded['missing_criteria_error']} rows have no criteria under --missing-criteria error"
+        )
     if excluded["missing_abstract_error"]:
         fatal_reasons.append(
             f"{excluded['missing_abstract_error']} rows have no abstract under --missing-abstract error"
@@ -372,6 +452,8 @@ def main():
         "requested_pmid_status": dict(sorted(requested_status.items())),
         "output_rows": output_count,
         "excluded_rows_by_reason": dict(sorted(excluded.items())),
+        "missing_criteria_policy": args.missing_criteria,
+        "withheld_criteria_check": withheld_check,
         "reviews_missing_criteria": len(missing_criteria_reviews),
         "reviews_missing_criteria_examples": sorted(missing_criteria_reviews)[:20],
         "failed_batches": failed_batches,

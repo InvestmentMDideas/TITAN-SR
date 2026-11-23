@@ -2,7 +2,12 @@
   "schema_version": 1,
   "dataset": {
     "title": "Title and Abstract Screening Data for Systematic Review",
-    "authors": ["Gary Chan", "Estrid He", "Janni Leung", "Karin Verspoor"],
+    "authors": [
+      "Gary Chan",
+      "Estrid He",
+      "Janni Leung",
+      "Karin Verspoor"
+    ],
     "repository": "Mendeley Data",
     "version": 1,
     "doi": "10.17632/7sgmg89zb6.1",
@@ -48,11 +53,130 @@
       }
     ]
   },
+  "manual_search_archive": {
+    "filename": "20240827_Systematic_review_manual_search_data.zip",
+    "size_bytes": 106458488,
+    "sha256": "649d89336b68f314f6177ef90a2da274e22e7c755a3729634b574698362e48d3",
+    "download_url": "https://data.mendeley.com/public-files/datasets/7sgmg89zb6/files/e441755b-b1dd-43f4-8ea1-19846ad35ef5/file_downloaded",
+    "used_for": "22-review temporal external holdout: titles/labels (external_holdout_labels.csv.gz) and selection criteria (rebuilt by src/build_external_criteria.py)",
+    "members": [
+      {
+        "filename": "CD011218_data_cleaned.csv",
+        "size_bytes": 2505620,
+        "sha256": "0e07fbf922acd08044b8949d8eb6bb3fa609dd791c1894fe8608846e82b195ab"
+      },
+      {
+        "filename": "CD012268_data_cleaned.csv",
+        "size_bytes": 15721118,
+        "sha256": "2489c2bcaaf3aa907b17070bf66cbc9e41e3bc36fa1e97716b6cbf126b48765d"
+      },
+      {
+        "filename": "CD013042_data_cleaned.csv",
+        "size_bytes": 2984870,
+        "sha256": "216b2871645345fd6389df3fa2c112fef5a0bf34c7fa9b2bcbf14e5a411b6e9d"
+      },
+      {
+        "filename": "CD013059_data_cleaned.csv",
+        "size_bytes": 16456644,
+        "sha256": "2b9a28bf130cfb32ac580a2f3a4fdacdd2a60d4b46329a4fe72d6470df815e82"
+      },
+      {
+        "filename": "CD013071_data_cleaned.csv",
+        "size_bytes": 26931448,
+        "sha256": "3348f612b0989616a8e73a7ed3f5852a62ca9a4dd9069858bb1d2cf10fbe0e20"
+      },
+      {
+        "filename": "CD013197_data_cleaned.csv",
+        "size_bytes": 8273215,
+        "sha256": "2c8c4573ad183ca211c1216d7698a2918cb0cdc6b03642177c8443cb02758558"
+      },
+      {
+        "filename": "CD013199_data_cleaned.csv",
+        "size_bytes": 8985428,
+        "sha256": "1feec81be3b84585557cb856b2fb98bc5a8f1eb87c102367b9718c8facb13069"
+      },
+      {
+        "filename": "CD013295_data_cleaned.csv",
+        "size_bytes": 12586280,
+        "sha256": "a7b587497da0451aa87e0f1094a3e7f0eda8efcd6038f3e9d59ddb9d7b84f607"
+      },
+      {
+        "filename": "CD013358_data_cleaned.csv",
+        "size_bytes": 11197025,
+        "sha256": "9a8b4ddc47d18034ede1d60ca701242bf3b903817dd1e8466f3c9701786af63d"
+      },
+      {
+        "filename": "CD013377_data_cleaned.csv",
+        "size_bytes": 17010792,
+        "sha256": "559fb3f9d165cf51be31c77a248711fe4d7745fcb4dafa010b76b42561820a48"
+      },
+      {
+        "filename": "CD013421_data_cleaned.csv",
+        "size_bytes": 8151478,
+        "sha256": "c452d983f73d1def5d32d38110a76cce4bef05f118fe75c1864bd80a48baafbb"
+      },
+      {
+        "filename": "CD013590_data_cleaned.csv",
+        "size_bytes": 4823511,
+        "sha256": "c48dccfcc8a753cf9280992233af686bac71a68e6d2f60092ccc66d86899856b"
+      },
+      {
+        "filename": "CD013591_data_cleaned.csv",
+        "size_bytes": 45055913,
+        "sha256": "e25d9d5a2d60327ad1ebc214a15fbd6326e8a10af324c1973e60ad4f2ff02455"
+      },
+      {
+        "filename": "CD013822_data_cleaned.csv",
+        "size_bytes": 34378572,
+        "sha256": "2beda814d6ce0a296a1623d1fe9343149d57659c8b981204215b2ed231111c4a"
+      },
+      {
+        "filename": "CD013880_data_cleaned.csv",
+        "size_bytes": 51100126,
+        "sha256": "222d72feaa689a06f6662b62026e63940ac0f255f49e6edddbda54615ec94d94"
+      },
+      {
+        "filename": "CD014715_data_cleaned.csv",
+        "size_bytes": 148903964,
+        "sha256": "33dbca818c6815c873f162e68cd696a938c525157c6d6d7146ef6676aec8c58b"
+      },
+      {
+        "filename": "CD014736_data_cleaned.csv",
+        "size_bytes": 24266216,
+        "sha256": "2c4e69191797ac649dde96a0d1035fbb6cf78122aa0f3d8fa2b7fbbb032db919"
+      },
+      {
+        "filename": "CD015038_data_cleaned.csv",
+        "size_bytes": 5927375,
+        "sha256": "a7b845e7c1e879dbac5404830a450d36773098301c840eec924274b878645368"
+      },
+      {
+        "filename": "CD015042_data_cleaned.csv",
+        "size_bytes": 10779355,
+        "sha256": "e3c42f2bc61a052ebbe822c9a1b8ebca163025c2ead61713d35aed7bc2460883"
+      },
+      {
+        "filename": "CD015067_data_cleaned.csv",
+        "size_bytes": 6788920,
+        "sha256": "9b0c554c4fbffc9996ce562be1182fdff8d6b9454286f420206c638594b96f93"
+      },
+      {
+        "filename": "CD015306_data_cleaned.csv",
+        "size_bytes": 4547490,
+        "sha256": "18bff7bacf3a0cd9e0209642a4277e4ecbe93b096441caae7165f48e9ed3a88b"
+      },
+      {
+        "filename": "CD015432_data_cleaned.csv",
+        "size_bytes": 6153644,
+        "sha256": "d56834370247f262a8e505082c2f7d4aed410708286808855959a439c50b33e5"
+      }
+    ]
+  },
   "verification": {
     "retrieved_on": "2026-07-11",
     "publisher_sha256_match": true,
     "zip_integrity_test": "ok",
-    "note": "Source locator and integrity metadata only; the archive is not bundled here."
+    "note": "Source locator and integrity metadata only; neither archive is bundled here. The manual-search archive and its member hashes were verified against the publisher API on 2026-11-23."
   },
   "label_interpretation": {
     "1": "final inclusion",
